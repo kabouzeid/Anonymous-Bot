@@ -1,7 +1,6 @@
 package codes.ka
 
 import codes.ka.db.saveRefreshTokenData
-import codes.ka.processing.runHelpCommand
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -49,9 +48,9 @@ fun Application.configureRouting() {
                     }
 
                     is MessagePayload -> {
-                        when (payload.command()) {
-                            "help" -> runHelpCommand(payload)
-                        }
+                        val command = payload.command()
+                        val userCommand = userCommands.firstOrNull { it.name == command }
+                        userCommand?.run?.invoke(this, payload)
                         SpaceHttpResponse.RespondWithOk
                     }
 
@@ -66,16 +65,7 @@ fun Application.configureRouting() {
 
 suspend fun ApplicationCall.respondCommandList() {
     respondText(
-        ObjectMapper().writeValueAsString(
-            Commands(
-                listOf(
-                    CommandDetail(
-                        "help",
-                        "show this help message"
-                    )
-                )
-            )
-        ),
+        ObjectMapper().writeValueAsString(Commands(userCommands.map(UserCommand::commandDetail))),
         ContentType.Application.Json,
         HttpStatusCode.OK
     )

@@ -1,12 +1,11 @@
 package codes.ka.processing
 
+import codes.ka.userCommands
 import space.jetbrains.api.ExperimentalSpaceSdkApi
 import space.jetbrains.api.runtime.helpers.ProcessingScope
 import space.jetbrains.api.runtime.helpers.message
 import space.jetbrains.api.runtime.resources.chats
-import space.jetbrains.api.runtime.types.ChannelIdentifier
-import space.jetbrains.api.runtime.types.ChatMessage
-import space.jetbrains.api.runtime.types.MessagePayload
+import space.jetbrains.api.runtime.types.*
 
 @OptIn(ExperimentalSpaceSdkApi::class)
 suspend fun ProcessingScope.runHelpCommand(payload: MessagePayload) {
@@ -16,8 +15,17 @@ suspend fun ProcessingScope.runHelpCommand(payload: MessagePayload) {
 
 fun helpMessage(): ChatMessage {
     return message {
+        MessageOutline(
+            icon = ApiIcon("checkbox-checked"),
+            text = "Random Coffee bot help"
+        )
         section {
-            text("Soon the help will be shown here!")
+            text("List of available commands", MessageStyle.PRIMARY)
+            fields {
+                userCommands.forEach {
+                    field(it.name, it.description)
+                }
+            }
         }
     }
 }
