@@ -1,11 +1,16 @@
 package codes.ka
 
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import codes.ka.plugins.*
+import codes.ka.db.initDbConnection
+import io.ktor.server.application.*
+import space.jetbrains.api.runtime.ktorClientForSpace
 
-fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
-        configureRouting()
-    }.start(wait = true)
+fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
+
+@Suppress("unused")
+fun Application.module() {
+    initDbConnection()
+
+    configureRouting()
 }
+
+val spaceHttpClient = ktorClientForSpace()
