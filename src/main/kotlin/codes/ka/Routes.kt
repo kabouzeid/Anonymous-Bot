@@ -1,6 +1,7 @@
 package codes.ka
 
 import codes.ka.db.saveRefreshTokenData
+import codes.ka.processing.process
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -11,21 +12,18 @@ import space.jetbrains.api.ExperimentalSpaceSdkApi
 import space.jetbrains.api.runtime.Space
 import space.jetbrains.api.runtime.helpers.RequestAdapter
 import space.jetbrains.api.runtime.helpers.SpaceHttpResponse
-import space.jetbrains.api.runtime.helpers.command
 import space.jetbrains.api.runtime.helpers.processPayload
+import space.jetbrains.api.runtime.resources.applications
 import space.jetbrains.api.runtime.types.*
 
 @OptIn(ExperimentalSpaceSdkApi::class)
 fun Application.configureRouting() {
     routing {
-
         post("api/space") {
             val ktorRequestAdapter = object : RequestAdapter {
-                override suspend fun receiveText() =
-                    call.receiveText()
+                override suspend fun receiveText() = call.receiveText()
 
-                override fun getHeader(headerName: String) =
-                    call.request.header(headerName)
+                override fun getHeader(headerName: String) = call.request.header(headerName)
 
                 override suspend fun respond(httpStatusCode: Int, body: String) =
                     call.respond(HttpStatusCode.fromValue(httpStatusCode), body)
@@ -34,6 +32,9 @@ fun Application.configureRouting() {
             Space.processPayload(ktorRequestAdapter, spaceHttpClient, AppInstanceStorage) { payload ->
                 when (payload) {
                     is InitPayload -> {
+                        clientWithClientCredentials().applications.authorizations.authorizedRights.requestRights(
+                            ApplicationIdentifier.Me, GlobalPermissionContextIdentifier, channelPermissions
+                        )
                         SpaceHttpResponse.RespondWithOk
                     }
 
@@ -48,9 +49,12 @@ fun Application.configureRouting() {
                     }
 
                     is MessagePayload -> {
-                        val command = payload.command()
-                        val userCommand = userCommands.firstOrNull { it.name == command }
-                        userCommand?.run?.invoke(this, payload)
+                        process(payload)
+                        SpaceHttpResponse.RespondWithOk
+                    }
+
+                    is MessageActionPayload -> {
+                        process(payload)
                         SpaceHttpResponse.RespondWithOk
                     }
 
@@ -63,7 +67,7 @@ fun Application.configureRouting() {
     }
 }
 
-suspend fun ApplicationCall.respondCommandList() {
+private suspend fun ApplicationCall.respondCommandList() {
     respondText(
         ObjectMapper().writeValueAsString(Commands(userCommands.map(UserCommand::commandDetail))),
         ContentType.Application.Json,
