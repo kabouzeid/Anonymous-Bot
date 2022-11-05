@@ -1,0 +1,22 @@
+services:
+  anonymous_bot:
+    build: .
+    ports:
+      - 10000:8080
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+  postgres:
+    image: postgres
+    restart: always
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+volumes:
+  postgres:
