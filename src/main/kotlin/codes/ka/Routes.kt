@@ -19,6 +19,10 @@ import space.jetbrains.api.runtime.types.*
 @OptIn(ExperimentalSpaceSdkApi::class)
 fun Application.configureRouting() {
     routing {
+        get("/") {
+            call.respondText("Anonymous Bot: up and running!")
+        }
+
         post("api/space") {
             val ktorRequestAdapter = object : RequestAdapter {
                 override suspend fun receiveText() = call.receiveText()
