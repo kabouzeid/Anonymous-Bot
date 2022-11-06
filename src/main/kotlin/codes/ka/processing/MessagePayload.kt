@@ -17,7 +17,21 @@ import space.jetbrains.api.runtime.types.*
 suspend fun ProcessingScope.process(payload: MessagePayload) {
     val command = payload.command()
     val userCommand = userCommands.firstOrNull { it.name == command }
-    userCommand?.run?.invoke(this, payload)
+
+    if (userCommand != null) {
+        userCommand.run(this, payload)
+    } else {
+        clientWithClientCredentials().chats.messages.sendMessage(
+            ChannelIdentifier.Id(payload.message.channelId),
+            message {
+                section {
+                    text(
+                        "Hmm, I'm not quite sure what you want me to do. You can write `help` to get instructions.",
+                        MessageStyle.ERROR
+                    )
+                }
+            })
+    }
 }
 
 @OptIn(ExperimentalSpaceSdkApi::class)
@@ -78,7 +92,7 @@ suspend fun ProcessingScope.runSendCommand(payload: MessagePayload) {
                 message { section { text(text) } }) { id() }
             spaceClient.chats.messages.sendMessage(ChannelIdentifier.Id(payload.message.channelId), message {
                 section {
-                    text("Your message has been sent 🎉")
+                    text("I've sent your message 🎉")
                     controls {
                         button(
                             "Undo",
@@ -92,7 +106,7 @@ suspend fun ProcessingScope.runSendCommand(payload: MessagePayload) {
             spaceClient.chats.messages.sendMessage(ChannelIdentifier.Id(payload.message.channelId), message {
                 section {
                     text(
-                        "Sorry, I'm not authorized to send messages into this channel 😔 Ask your system administrator or the channel administrator to grant me permission to send messages into this channel.",
+                        "Sorry, I'm not authorized to send messages into this channel 😔 Ask your system administrator or the channel administrator to grant me permission.",
                         MessageStyle.ERROR
                     )
                 }
@@ -106,7 +120,7 @@ suspend fun ProcessingScope.runSendCommand(payload: MessagePayload) {
         spaceClient.chats.messages.sendMessage(ChannelIdentifier.Id(payload.message.channelId), message {
             section {
                 text(
-                    "Please provide a valid channel name. Use `help` for instructions.", MessageStyle.ERROR
+                    "Sorry, that didn't work 😕 You must provide a valid channel name. You can write `help` to get instructions.", MessageStyle.ERROR
                 )
             }
         })
