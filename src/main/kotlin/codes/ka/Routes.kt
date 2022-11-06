@@ -36,6 +36,10 @@ fun Application.configureRouting() {
             Space.processPayload(ktorRequestAdapter, spaceHttpClient, AppInstanceStorage) { payload ->
                 when (payload) {
                     is InitPayload -> {
+                        clientWithClientCredentials().applications.setUiExtensions(
+                            contextIdentifier = GlobalPermissionContextIdentifier,
+                            extensions = listOf(ChatBotUiExtensionIn)
+                        )
                         clientWithClientCredentials().applications.authorizations.authorizedRights.requestRights(
                             ApplicationIdentifier.Me, GlobalPermissionContextIdentifier, channelPermissions
                         )
